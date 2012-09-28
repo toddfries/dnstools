@@ -1,0 +1,103 @@
+#!/bin/ksh
+
+# Copyright (c) 2012 Todd T. Fries <todd@fries.net>
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+prepend() {
+	local pre="$1"
+	while read line
+	do
+		echo "$pre$line"
+	done
+}
+
+dashes="----------------------------------------------------------------------"
+bubble() {
+	local len=$(( 70 - $(echo -n "  $1" | wc -c) + 0 )) 
+	outputstartfmt=" ,------- %s %${len}s"
+	outputstopfmt=" \`------- %s %${len}s"
+	printf "$outputstartfmt\n" "$1" "$dashes"
+	cat | prepend "| "
+	printf "$outputstopfmt\n" "$1" "$dashes"
+}
+
+while [ "$1" ]
+do
+	thisdomain="$1"
+	echo "==> $1 .. (1) = not found in tld glue, (2) = in tld glue, not in NS list"
+for h in $(dig +short -t ns "$thisdomain")
+do
+	{
+	  set -A alist $(
+	    # the below for loop is in lieu of following "AUTHORITY SECTION"
+	    # info, highly recommended, todo XXX!
+	    for gtld in a.gtld-servers.net a.root-servers.net a.nic.de \
+		sec1.apnic.net a0.org.afilias-nst.org \
+		dns11.domainnetwork.com ns1.dns.nl x.dns.eu
+	    do
+		dig @$gtld $h
+	    done | \
+	    perl -e 'my $h = $ARGV[0];
+	    while(<stdin>) {
+		if(m/^$h[ \t]+[0-9]+[ \t]+IN[ \t]+A+[ \t]+([0-9a-f:\.]+)[ \t]*$/) {
+			printf "%s ", $1;
+			next;
+		}
+	    }' $h )
+	  if [ ${#alist[*]} -eq 0 ]; then
+		echo "Empty alist!"
+	  fi
+	  #echo "alist: ${alist[*]}"
+	  for a in $(dig +short -t aaaa $h; dig +short -t a $h)
+	  do
+		if [[ "$a" = 2001:470:ba0a:ffff:64:* ]]; then
+			continue
+		fi
+		if [[ "$a" = 2001:470:8a7c:ffff:64:* ]]; then
+			continue
+		fi
+		i=0
+		found=0
+		while [ i -lt ${#alist[*]} ]
+		do
+			#echo "alist entry $i: ${alist[$i]}"
+			if [ "$a" = "${alist[$i]}" ]; then
+				alist[$i]="found"
+				found=1
+			fi
+			let i=i+1
+		done
+		info=""
+		if [ found -eq 0 -a ${#alist[*]} -gt 0 ]; then
+			info=" --> (1) <--"
+		fi
+		{
+			dig +short -t soa @$a $thisdomain
+		} | prepend " " | bubble "IP $a$info"
+	  done 2>&1 
+	  i=0
+	  info=" --> (2) <--"
+	  while [ i -lt ${#alist[*]} ]
+	  do
+		if [ "X${alist[$i]}" != "Xfound" ]; then
+			{
+			  dig +short -t soa @${alist[$i]} $thisdomain
+			} | prepend " " | bubble "IP ${alist[$i]}$info"
+		fi
+		let i=i+1
+	  done
+	} | prepend " " | bubble "host $h"
+done
+shift
+done

@@ -89,7 +89,7 @@ root=""
 while [ "$1" ]
 do
 	case "$1" in
-	"-t") type="$2";shift;;
+	"-t") type=$(echo "$2"|tr "[A-Z]" "[a-z]");shift;;
 	"-ns") root="@$2";shift;;
 	*) break;;
 	esac
@@ -121,6 +121,11 @@ do
 		fi
 	done
 	echo "$zone)"
+	if [ "$type" = "soa" ]; then
+		q=$zone
+	else
+		q=$thisdomain
+	fi
 
 	#
 	# for each NS record, look for glue, query all A/AAAA's found
@@ -164,7 +169,7 @@ do
 			info=" (1)"
 		fi
 		{
-			dig +short -t $type @$a $zone
+			dig +short -t $type @$a $q
 		} | prepend " " | bubble "$a$info"
 	done
 
@@ -175,7 +180,7 @@ do
 	do
 		if [ "X${alist[$i]}" != "Xfound" ]; then
 			{
-			dig +short -t $type @${alist[$i]} $zone
+			dig +short -t $type @${alist[$i]} $q
 			} | prepend " " | bubble "${alist[$i]}$info"
 		fi
 		let i=i+1

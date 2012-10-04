@@ -102,7 +102,7 @@ fi
 while [ "$1" ]
 do
 	thisdomain="$1"
-	echo "==> $1"
+	echo -n "==> $1 (zone="
 
 	#
 	# distill a host down to the parent domain until it lists dns servers
@@ -120,7 +120,7 @@ do
 			break
 		fi
 	done
-	echo "    zone=$zone"
+	echo "$zone)"
 
 	#
 	# for each NS record, look for glue, query all A/AAAA's found

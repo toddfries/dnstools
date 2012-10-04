@@ -8,7 +8,7 @@ tell me what DNS server was busted.  So I decided to fix that.
 
 Sample output:
 
-$ ksh ./nscheck www.freedaemon.com twitter.com sf.net google.com aol.com .    
+$ ksh ./nscheck www.freedaemon.com twitter.com sf.net google.com aol.com weirdnet.nl .
 [key: (1) = not found in tld glue, (2) = in tld glue, not in NS list]
 ==> www.freedaemon.com (zone=freedaemon.com)
     NS ns0.l4.FreeDaemonHosting.net.
@@ -69,6 +69,16 @@ $ ksh ./nscheck www.freedaemon.com twitter.com sf.net google.com aol.com .
                              64.12.51.132 | dns-01.ns.aol.com. hostmaster.aol.net. 357951562 43200 180 2592000 300
     NS dns-06.ns.aol.com.
                             207.200.73.80 | dns-01.ns.aol.com. hostmaster.aol.net. 357951562 43200 180 2592000 300
+==> weirdnet.nl (zone=weirdnet.nl)
+    NS ns.paphosting.eu.
+                        2001:788:2:117::2 | ns.paphosting.net. hostmaster.weirdnet.nl. 2012012500 600 200 604800 600
+                           62.220.146.194 | ns.paphosting.net. hostmaster.weirdnet.nl. 2012012500 600 200 604800 600
+    NS ns.paphosting.net.
+         2001:7b8:3:47:20d:b9ff:fe14:70d4 | ns.paphosting.net. hostmaster.weirdnet.nl. 2012012500 600 200 604800 600
+                           213.154.229.21 | ns.paphosting.net. hostmaster.weirdnet.nl. 2012012500 600 200 604800 600
+    NS ns.paphosting.nl.
+                           2a02:898:28::3 | ns.paphosting.net. hostmaster.weirdnet.nl. 2012012500 600 200 604800 600
+                             94.142.245.3 | ns.paphosting.net. hostmaster.weirdnet.nl. 2012012500 600 200 604800 600
 ==> . (zone=.)
     NS g.root-servers.net.
                              192.112.36.4 | a.root-servers.net. nstld.verisign-grs.com. 2012100401 1800 900 604800 86400

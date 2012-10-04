@@ -1,6 +1,6 @@
 <pre>
-From: Todd T. Fries <todd@fries.net>
 Subject: dnstools
+From: Todd T. Fries &lt;todd@fries.net&gt;
 To: anyone reading this
 
 I wanted to see what soa records were in sync, but host -C didn't tell

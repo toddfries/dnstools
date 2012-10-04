@@ -25,19 +25,43 @@ prepend() {
 dashes="----------------------------------------------------------------------"
 bubble() {
 	local len=$(( 70 - $(echo -n "  $1" | wc -c) + 0 )) 
-	outputstartfmt=" ,------- %s %${len}s"
+	outputstartfmt=" %30s "
 	outputstopfmt=" \`------- %s %${len}s"
-	printf "$outputstartfmt\n" "$1" "$dashes"
+	printf "$outputstartfmt" "$1"
 	cat | prepend "| "
-	printf "$outputstopfmt\n" "$1" "$dashes"
 }
+
+type=soa
+while [ "$1" ]
+do
+	case "$1" in
+	"-t") type="$2";shift;;
+	"-ns") root="@$2";shift;;
+	*) break;;
+	esac
+	shift
+done
 
 while [ "$1" ]
 do
 	thisdomain="$1"
-	echo "==> $1 .. (1) = not found in tld glue, (2) = in tld glue, not in NS list"
-for h in $(dig +short -t ns "$thisdomain")
+	echo "==> $1 [key: (1) = not found in tld glue, (2) = in tld glue, not in NS list]"
+zone="$thisdomain"
+while :
 do
+	#echo "zone=$zone"
+	list=$(dig +short -t ns $root "$zone")
+	if [ "$list" ]; then
+		break
+	fi
+	zone="${zone#*\.}"
+	if ! [ "$zone" ]; then
+		break
+	fi
+done
+for h in $list
+do
+	echo host $h
 	{
 	  set -A alist $(
 	    # the below for loop is in lieu of following "AUTHORITY SECTION"
@@ -83,7 +107,7 @@ do
 			info=" --> (1) <--"
 		fi
 		{
-			dig +short -t soa @$a $thisdomain
+			dig +short -t $type @$a $thisdomain
 		} | prepend " " | bubble "IP $a$info"
 	  done 2>&1 
 	  i=0
@@ -92,12 +116,12 @@ do
 	  do
 		if [ "X${alist[$i]}" != "Xfound" ]; then
 			{
-			  dig +short -t soa @${alist[$i]} $thisdomain
+			  dig +short -t $type @${alist[$i]} $thisdomain
 			} | prepend " " | bubble "IP ${alist[$i]}$info"
 		fi
 		let i=i+1
 	  done
-	} | prepend " " | bubble "host $h"
+	} #| prepend " " | bubble "host $h\n"
 done
 shift
 done

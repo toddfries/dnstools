@@ -164,7 +164,7 @@ do
 			info=" (1)"
 		fi
 		{
-			dig +short -t $type @$a $thisdomain
+			dig +short -t $type @$a $zone
 		} | prepend " " | bubble "$a$info"
 	done
 
@@ -175,7 +175,7 @@ do
 	do
 		if [ "X${alist[$i]}" != "Xfound" ]; then
 			{
-			dig +short -t $type @${alist[$i]} $thisdomain
+			dig +short -t $type @${alist[$i]} $zone
 			} | prepend " " | bubble "${alist[$i]}$info"
 		fi
 		let i=i+1

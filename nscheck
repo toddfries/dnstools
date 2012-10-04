@@ -59,19 +59,47 @@ do
 		break
 	fi
 done
-for h in $list
-do
-	echo host $h
-	{
-	  set -A alist $(
-	    # the below for loop is in lieu of following "AUTHORITY SECTION"
-	    # info, highly recommended, todo XXX!
-	    for gtld in a.gtld-servers.net a.root-servers.net a.nic.de \
-		sec1.apnic.net a0.org.afilias-nst.org \
-		dns11.domainnetwork.com ns1.dns.nl x.dns.eu
-	    do
-		dig @$gtld $h
-	    done | \
+digns() {
+	local ns="$1" host="$2"
+	if [ "$ns" = "." ]; then
+		set -A nslist $(dig +short -t ns .)
+		ns=${nslist[$((RANDOM%${#nslist[*]}))]}
+	fi
+	while :
+	do
+		#echo "digns: ns=$ns"
+		set -A nslist $(dig @$ns $host |
+		    perl -e '
+		    my $authority = 0;
+		    while(<stdin>) {
+			if (m/^;; AUTHORITY SECTION/) {
+				$authority = 1;
+				next;
+			}
+			if ($authority > 0) {
+				if (m/^$/) {
+					$authority = 0;
+					next;
+				}
+			} else {
+				next;
+			}
+				
+			if(m/^[^ \t]+[ \t]+[0-9]+[ \t]+IN[ \t]+NS[ \t]+(.+)[ \t]*$/) {
+				printf "%s ", $1;
+				next;
+			}
+			printf STDERR "AUTHORITY mismatched line: %s",$_;
+		    }')
+		#echo "digns: nslist = ${nslist[*]}"
+		if [ ${#nslist[*]} -eq 0 ]; then
+			break
+		fi
+		ns=${nslist[$((RANDOM%${#nslist[*]}))]}
+		if [ "X$ns" = "X" ]; then
+			break
+		fi
+	  set -A alist $(dig @$ns $host | \
 	    perl -e 'my $h = $ARGV[0];
 	    while(<stdin>) {
 		if(m/^$h[ \t]+[0-9]+[ \t]+IN[ \t]+A+[ \t]+([0-9a-f:\.]+)[ \t]*$/) {
@@ -79,6 +107,17 @@ do
 			next;
 		}
 	    }' $h )
+		if [ ${#alist[*]} -gt 0 ]; then
+			break
+		fi
+	done
+}
+	
+for h in $list
+do
+	echo host $h
+	{
+	  digns . $h
 	  if [ ${#alist[*]} -eq 0 ]; then
 		echo "Empty alist!"
 	  fi
@@ -104,14 +143,14 @@ do
 		done
 		info=""
 		if [ found -eq 0 -a ${#alist[*]} -gt 0 ]; then
-			info=" --> (1) <--"
+			info=" (1)"
 		fi
 		{
 			dig +short -t $type @$a $thisdomain
 		} | prepend " " | bubble "IP $a$info"
 	  done 2>&1 
 	  i=0
-	  info=" --> (2) <--"
+	  info=" (2)"
 	  while [ i -lt ${#alist[*]} ]
 	  do
 		if [ "X${alist[$i]}" != "Xfound" ]; then

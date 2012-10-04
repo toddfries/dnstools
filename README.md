@@ -3,8 +3,10 @@ Subject: dnstools
 From: Todd T. Fries &lt;todd@fries.net&gt;
 To: anyone reading this
 
-I wanted to see what soa records were in sync, but host -C didn't tell
-me what dns server was busted.  So I decided to fix that.
+I wanted to see what SOA records were in sync, but ``host -C'' didn't
+tell me what DNS server was busted.  So I decided to fix that.
+
+Enjoy!
 
 Thanks,
 --

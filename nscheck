@@ -25,40 +25,11 @@ prepend() {
 dashes="----------------------------------------------------------------------"
 bubble() {
 	local len=$(( 70 - $(echo -n "  $1" | wc -c) + 0 )) 
-	outputstartfmt=" %30s "
+	outputstartfmt=" %40s "
 	outputstopfmt=" \`------- %s %${len}s"
 	printf "$outputstartfmt" "$1"
 	cat | prepend "| "
 }
-
-type=soa
-while [ "$1" ]
-do
-	case "$1" in
-	"-t") type="$2";shift;;
-	"-ns") root="@$2";shift;;
-	*) break;;
-	esac
-	shift
-done
-
-while [ "$1" ]
-do
-	thisdomain="$1"
-	echo "==> $1 [key: (1) = not found in tld glue, (2) = in tld glue, not in NS list]"
-zone="$thisdomain"
-while :
-do
-	#echo "zone=$zone"
-	list=$(dig +short -t ns $root "$zone")
-	if [ "$list" ]; then
-		break
-	fi
-	zone="${zone#*\.}"
-	if ! [ "$zone" ]; then
-		break
-	fi
-done
 digns() {
 	local ns="$1" host="$2"
 	if [ "$ns" = "." ]; then
@@ -69,9 +40,9 @@ digns() {
 	do
 		#echo "digns: ns=$ns"
 		set -A nslist $(dig @$ns $host |
-		    perl -e '
-		    my $authority = 0;
-		    while(<stdin>) {
+		  perl -e '
+		  my $authority = 0;
+		  while(<stdin>) {
 			if (m/^;; AUTHORITY SECTION/) {
 				$authority = 1;
 				next;
@@ -90,7 +61,7 @@ digns() {
 				next;
 			}
 			printf STDERR "AUTHORITY mismatched line: %s",$_;
-		    }')
+		  }')
 		#echo "digns: nslist = ${nslist[*]}"
 		if [ ${#nslist[*]} -eq 0 ]; then
 			break
@@ -99,37 +70,84 @@ digns() {
 		if [ "X$ns" = "X" ]; then
 			break
 		fi
-	  set -A alist $(dig @$ns $host | \
-	    perl -e 'my $h = $ARGV[0];
-	    while(<stdin>) {
+	set -A alist $(dig @$ns $host | \
+	  perl -e 'my $h = $ARGV[0];
+	  while(<stdin>) {
 		if(m/^$h[ \t]+[0-9]+[ \t]+IN[ \t]+A+[ \t]+([0-9a-f:\.]+)[ \t]*$/) {
 			printf "%s ", $1;
 			next;
 		}
-	    }' $h )
+	  }' $h )
 		if [ ${#alist[*]} -gt 0 ]; then
 			break
 		fi
 	done
 }
-	
+
+type=soa
+root=""
+while [ "$1" ]
+do
+	case "$1" in
+	"-t") type="$2";shift;;
+	"-ns") root="@$2";shift;;
+	*) break;;
+	esac
+	shift
+done
+
+if [ "$1" ]; then
+	echo "[key: (1) = not found in tld glue, (2) = in tld glue, not in NS list]"
+fi
+while [ "$1" ]
+do
+	thisdomain="$1"
+	echo "==> $1"
+
+	#
+	# distill a host down to the parent domain until it lists dns servers
+	#
+	zone="$thisdomain"
+	while :
+	do
+		#echo "zone=$zone"
+		list=$(dig +short -t ns $root "$zone")
+		if [ "$list" ]; then
+			break
+		fi
+		zone="${zone#*\.}"
+		if ! [ "$zone" ]; then
+			break
+		fi
+	done
+	echo "    zone=$zone"
+
+	#
+	# for each NS record, look for glue, query all A/AAAA's found
+	#
 for h in $list
 do
-	echo host $h
-	{
-	  digns . $h
-	  if [ ${#alist[*]} -eq 0 ]; then
+	echo "    NS $h"
+	# set alist to whatever tld recursion finds
+	digns . $h
+	if [ ${#alist[*]} -eq 0 ]; then
 		echo "Empty alist!"
-	  fi
-	  #echo "alist: ${alist[*]}"
-	  for a in $(dig +short -t aaaa $h; dig +short -t a $h)
-	  do
+	fi
+	#echo "alist: ${alist[*]}"
+	# get a/aaaa from local dns resources and check soa
+	for a in $(dig +short -t aaaa $h; dig +short -t a $h)
+	do
+		#
+		# XXX use a conf file, these are dns64 bits to
+		# filter on my personal network
+		#
 		if [[ "$a" = 2001:470:ba0a:ffff:64:* ]]; then
 			continue
 		fi
 		if [[ "$a" = 2001:470:8a7c:ffff:64:* ]]; then
 			continue
 		fi
+
 		i=0
 		found=0
 		while [ i -lt ${#alist[*]} ]
@@ -147,20 +165,21 @@ do
 		fi
 		{
 			dig +short -t $type @$a $thisdomain
-		} | prepend " " | bubble "IP $a$info"
-	  done 2>&1 
-	  i=0
-	  info=" (2)"
-	  while [ i -lt ${#alist[*]} ]
-	  do
+		} | prepend " " | bubble "$a$info"
+	done
+
+	# check soa from tld recursion not found in above list
+	i=0
+	info=" (2)"
+	while [ i -lt ${#alist[*]} ]
+	do
 		if [ "X${alist[$i]}" != "Xfound" ]; then
 			{
-			  dig +short -t $type @${alist[$i]} $thisdomain
-			} | prepend " " | bubble "IP ${alist[$i]}$info"
+			dig +short -t $type @${alist[$i]} $thisdomain
+			} | prepend " " | bubble "${alist[$i]}$info"
 		fi
 		let i=i+1
-	  done
-	} #| prepend " " | bubble "host $h\n"
+	done
 done
 shift
 done

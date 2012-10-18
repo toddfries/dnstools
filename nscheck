@@ -33,7 +33,7 @@ bubble() {
 digns() {
 	local ns="$1" host="$2"
 	if [ "$ns" = "." ]; then
-		set -A nslist $(dig +short -t ns .)
+		set -A nslist $(dig +short -t ns .|sort)
 		ns=${nslist[$((RANDOM%${#nslist[*]}))]}
 	fi
 	while :
@@ -57,11 +57,11 @@ digns() {
 			}
 				
 			if(m/^[^ \t]+[ \t]+[0-9]+[ \t]+IN[ \t]+NS[ \t]+(.+)[ \t]*$/) {
-				printf "%s ", $1;
+				printf "%s\n", $1;
 				next;
 			}
 			printf STDERR "AUTHORITY mismatched line: %s",$_;
-		  }')
+		  }'|sort)
 		#echo "digns: nslist = ${nslist[*]}"
 		if [ ${#nslist[*]} -eq 0 ]; then
 			break
@@ -111,7 +111,7 @@ do
 	while :
 	do
 		#echo "zone=$zone"
-		list=$(dig +short -t ns $root "$zone")
+		list=$(dig +short -t ns $root "$zone"|sort)
 		if [ "$list" ]; then
 			break
 		fi
@@ -140,7 +140,7 @@ do
 	fi
 	#echo "alist: ${alist[*]}"
 	# get a/aaaa from local dns resources and check soa
-	for a in $(dig +short -t aaaa $h; dig +short -t a $h)
+	for a in $(dig +short -t aaaa $h|sort; dig +short -t a $h|sort)
 	do
 		#
 		# XXX use a conf file, these are dns64 bits to
@@ -169,7 +169,7 @@ do
 			info=" (1)"
 		fi
 		{
-			dig +short -t $type @$a $q
+			dig +short -t $type @$a $q | sort
 		} | prepend " " | bubble "$a$info"
 	done
 
@@ -180,7 +180,7 @@ do
 	do
 		if [ "X${alist[$i]}" != "Xfound" ]; then
 			{
-			dig +short -t $type @${alist[$i]} $q
+			dig +short -t $type @${alist[$i]} $q | sort
 			} | prepend " " | bubble "${alist[$i]}$info"
 		fi
 		let i=i+1

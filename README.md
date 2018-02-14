@@ -1,4 +1,4 @@
-<pre>
+```
 Subject: dnstools
 From: Todd T. Fries &lt;todd@fries.net&gt;
 To: anyone reading this
@@ -133,4 +133,10 @@ Todd Fries .. todd@fries.net
                                                  
               37E7 D3EB 74D0 8D66 A68D  B866 0326 204E 3F42 004A
                         http://todd.fries.net/pgp.txt
-</pre>
+```
+
+If you find this useful and wish to donate, I accept donations:
+
+- BTC: [16DnvYrewFD8aJqLqwEXTwpsPQEj3XpNXF](bitcoin:16DnvYrewFD8aJqLqwEXTwpsPQEj3XpNXF)
+
+- DCR: [DsXR5efVHrB6UyG2hoB7BuUBXsQc7yPAf4n](decred:DsXR5efVHrB6UyG2hoB7BuUBXsQc7yPAf4n)

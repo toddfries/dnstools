@@ -1,6 +1,6 @@
 ```
 Subject: dnstools
-From: Todd T. Fries &lt;todd@fries.net&gt;
+From: Todd T. Fries <todd@fries.net>
 To: anyone reading this
 
 I wanted to see what SOA records were in sync, but ``host -C'' didn't
@@ -127,7 +127,7 @@ Todd Fries .. todd@fries.net
 |                                            \  1.636.410.0632 (voice)
 | Free Daemon Consulting, LLC                \  1.405.227.9094 (voice)
 | http://FreeDaemonConsulting.com            \  1.866.792.3418 (FAX)
-| PO Box 16169, Oklahoma City, OK 73113      \  sip:freedaemon@ekiga.net
+| PO Box 16169, Oklahoma City, OK 73113-2169 \  sip:freedaemon@ekiga.net
 | "..in support of free software solutions." \  sip:4052279094@ekiga.net
  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
                                                  
